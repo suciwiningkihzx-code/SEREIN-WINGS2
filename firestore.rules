@@ -1,0 +1,201 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (Auth UID)
+    // Fields:
+    //   - id: string (required) - Firebase Auth UID
+    //   - name: string (required) - Display name
+    //   - email: string (required) - Email address
+    //   - is_verified: bool (optional) - Verification status
+    //   - created_at: string (optional) - Account creation date
+    //
+    // Collection: cycle_profiles
+    // Document ID: userId (Auth UID)
+    // Fields:
+    //   - user_id: string (required) - Owner's UID
+    //   - avg_cycle_length: number (required) - Average cycle length in days
+    //   - avg_period_duration: number (required) - Average period duration in days
+    //   - last_period_start: string (required) - Start date of the last period
+    //
+    // Collection: period_logs
+    // Document ID: auto-generated
+    // Fields:
+    //   - user_id: string (required) - Owner's UID
+    //   - start_date: string (required) - Start date of the period
+    //   - end_date: string (optional) - End date of the period
+    //
+    // Collection: mood_logs
+    // Document ID: auto-generated
+    // Fields:
+    //   - user_id: string (required) - Owner's UID
+    //   - logged_date: string (required) - Date of the log
+    //   - mood_score: number (required) - Mood score (1-5)
+    //   - symptoms: list (optional) - List of symptoms
+    //   - journal_text: string (optional) - Optional journal entry
+    //   - cycle_phase: string (optional) - Calculated cycle phase
+    //
+    // Collection: subscriptions
+    // Document ID: userId (Auth UID)
+    // Fields:
+    //   - user_id: string (required) - Owner's UID
+    //   - plan_type: string (required) - Type of subscription plan
+    //   - status: string (required) - Subscription status
+    //   - created_at: string (optional) - Subscription start date
+    //
+    // Collection: partners
+    // Document ID: userId (Auth UID)
+    // Fields:
+    //   - user_id: string (required) - Owner's UID
+    //   - partner_name: string (optional) - Partner's display name
+    //   - partner_contact: string (required) - Partner's email or contact info
+    //   - notify_period_start: bool (optional) - Notify on period start
+    //   - notify_bad_mood: bool (optional) - Notify on bad mood
+    //   - notify_cramps: bool (optional) - Notify on cramps
+    //
+    // ===============================================================
+
+    // Collection: ai_chats
+    // Document ID: auto-generated
+    // Fields:
+    //   - user_id: string (required) - Owner's UID
+    //   - role: string (required) - 'user' or 'model'
+    //   - text: string (required) - Message content
+    //   - created_at: timestamp (required) - Message timestamp
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.user_id;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}.*$");
+    }
+
+    function isTimestampOrISO(val) {
+      return val is timestamp || (val is string && val.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$"));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'name', 'email']) &&
+             data.id == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             isValidEmail(data.email) &&
+             (!('created_at' in data) || isTimestampOrISO(data.created_at));
+    }
+
+    function isValidCycleProfile(data) {
+      return data.keys().hasAll(['user_id', 'avg_cycle_length', 'avg_period_duration', 'last_period_start']) &&
+             data.user_id == request.auth.uid &&
+             data.avg_cycle_length is number && data.avg_cycle_length >= 21 && data.avg_cycle_length <= 45 &&
+             data.avg_period_duration is number && data.avg_period_duration >= 2 && data.avg_period_duration <= 14 &&
+             isValidDateString(data.last_period_start);
+    }
+
+    function isValidPeriodLog(data) {
+      return data.keys().hasAll(['user_id', 'start_date']) &&
+             data.user_id == request.auth.uid &&
+             isValidDateString(data.start_date);
+    }
+
+    function isValidMoodLog(data) {
+      return data.keys().hasAll(['user_id', 'logged_date', 'mood_score']) &&
+             data.user_id == request.auth.uid &&
+             isValidDateString(data.logged_date) &&
+             data.mood_score is number && data.mood_score >= 1 && data.mood_score <= 5;
+    }
+
+    function isValidSubscription(data) {
+      return data.keys().hasAll(['user_id', 'plan_type', 'status']) &&
+             data.user_id == request.auth.uid &&
+             data.plan_type is string &&
+             data.status in ['active', 'cancelled'];
+    }
+
+    function isValidPartner(data) {
+      return data.keys().hasAll(['user_id', 'partner_contact']) &&
+             data.user_id == request.auth.uid &&
+             isValidEmail(data.partner_contact);
+    }
+
+    function isValidAiChat(data) {
+      return data.keys().hasAll(['user_id', 'role', 'text']) &&
+             data.user_id == request.auth.uid &&
+             data.role in ['user', 'model'] &&
+             data.text is string && data.text.size() > 0;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+    }
+
+    match /cycle_profiles/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId) && isValidCycleProfile(request.resource.data);
+      allow update: if isOwner(userId) && isValidCycleProfile(request.resource.data);
+    }
+
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    match /period_logs/{logId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && isValidPeriodLog(request.resource.data);
+      allow update: if isAuthenticated() && resource.data.user_id == request.auth.uid && isValidPeriodLog(request.resource.data);
+      allow delete: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+    }
+
+    match /mood_logs/{logId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && isValidMoodLog(request.resource.data);
+      allow update: if isAuthenticated() && resource.data.user_id == request.auth.uid && isValidMoodLog(request.resource.data);
+      allow delete: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+    }
+
+    match /subscriptions/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidSubscription(request.resource.data);
+      allow update: if isOwner(userId) && isValidSubscription(request.resource.data);
+    }
+
+    match /partners/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidPartner(request.resource.data);
+      allow update: if isOwner(userId) && isValidPartner(request.resource.data);
+    }
+
+    match /ai_chats/{chatId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && isValidAiChat(request.resource.data);
+    }
+  }
+}

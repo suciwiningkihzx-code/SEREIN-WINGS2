@@ -1,0 +1,21 @@
+{
+  "name": "Serein Wings",
+  "short_name": "Serein",
+  "description": "Period tracker and self-care companion for modern Indonesian women.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FCF8FA",
+  "theme_color": "#C2506E",
+  "icons": [
+    {
+      "src": "https://i.ibb.co.com/Kc57cFrp/sereinwings.jpg",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co.com/Kc57cFrp/sereinwings.jpg",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

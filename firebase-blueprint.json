@@ -1,0 +1,88 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Basic user profile information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Display name" },
+        "email": { "type": "string", "description": "Email address" },
+        "is_verified": { "type": "boolean", "description": "Verification status" },
+        "created_at": { "type": "string", "format": "date-time", "description": "Account creation date" }
+      },
+      "required": ["id", "name", "email"]
+    },
+    "CycleProfile": {
+      "title": "Cycle Profile",
+      "description": "Menstrual cycle parameters for a user",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "description": "Owner's UID" },
+        "avg_cycle_length": { "type": "integer", "description": "Average cycle length in days" },
+        "avg_period_duration": { "type": "integer", "description": "Average period duration in days" },
+        "last_period_start": { "type": "string", "format": "date", "description": "Start date of the last period" }
+      },
+      "required": ["user_id", "avg_cycle_length", "avg_period_duration", "last_period_start"]
+    },
+    "PeriodLog": {
+      "title": "Period Log",
+      "description": "Individual period occurrence log",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "description": "Owner's UID" },
+        "start_date": { "type": "string", "format": "date", "description": "Start date of the period" },
+        "end_date": { "type": "string", "format": "date", "description": "End date of the period (optional)" }
+      },
+      "required": ["user_id", "start_date"]
+    },
+    "MoodLog": {
+      "title": "Mood Log",
+      "description": "Daily mood and symptom tracking",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "description": "Owner's UID" },
+        "logged_date": { "type": "string", "format": "date", "description": "Date of the log" },
+        "mood_score": { "type": "integer", "description": "Mood score (1-5)" },
+        "symptoms": { "type": "array", "items": { "type": "string" }, "description": "List of symptoms" },
+        "journal_text": { "type": "string", "description": "Optional journal entry" },
+        "cycle_phase": { "type": "string", "description": "Calculated cycle phase" }
+      },
+      "required": ["user_id", "logged_date", "mood_score"]
+    },
+    "Subscription": {
+      "title": "Subscription",
+      "description": "Self-care package subscription status",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "description": "Owner's UID" },
+        "plan_type": { "type": "string", "description": "Type of subscription plan" },
+        "status": { "type": "string", "description": "Subscription status (active, cancelled)" },
+        "created_at": { "type": "string", "format": "date-time", "description": "Subscription start date" }
+      },
+      "required": ["user_id", "plan_type", "status"]
+    },
+    "Partner": {
+      "title": "Partner",
+      "description": "Partner connection for notifications",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "description": "Owner's UID" },
+        "partner_name": { "type": "string", "description": "Partner's display name" },
+        "partner_contact": { "type": "string", "description": "Partner's email or contact info" },
+        "notify_period_start": { "type": "boolean", "description": "Notify on period start" },
+        "notify_bad_mood": { "type": "boolean", "description": "Notify on bad mood" },
+        "notify_cramps": { "type": "boolean", "description": "Notify on cramps" }
+      },
+      "required": ["user_id", "partner_contact"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": { "schema": "User", "description": "User profile document" },
+    "cycle_profiles/{userId}": { "schema": "CycleProfile", "description": "User's cycle parameters" },
+    "period_logs": { "schema": "PeriodLog", "description": "Collection of all period logs" },
+    "mood_logs": { "schema": "MoodLog", "description": "Collection of all mood logs" },
+    "subscriptions/{userId}": { "schema": "Subscription", "description": "User's subscription status" },
+    "partners/{userId}": { "schema": "Partner", "description": "User's partner connection" }
+  }
+}

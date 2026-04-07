@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,700;1,900&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  --font-body: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary: #a23856;
+  --color-primary-container: #c2506e;
+  --color-secondary: #795462;
+  --color-secondary-container: #fecddd;
+  --color-tertiary: #8c33b3;
+  --color-tertiary-fixed: #f8d8ff;
+  --color-surface: #fcf8fa;
+  --color-surface-container-low: #f6f2f4;
+  --color-surface-container-high: #ebe7e9;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-surface: #1c1b1d;
+  --color-on-surface-variant: #554245;
+  --color-outline-variant: #dcc0c4;
+}
+
+@layer base {
+  body {
+    @apply bg-surface font-body text-on-surface antialiased;
+  }
+}
+
+.glass-card {
+  @apply bg-surface-container-lowest/70 backdrop-blur-xl;
+}
+
+.pearl-texture {
+  background-image: radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
+                    linear-gradient(135deg, rgba(162, 56, 86, 0.05) 0%, rgba(140, 51, 179, 0.05) 100%);
+}
+
+.cycle-halo-gradient {
+  background: conic-gradient(from 180deg, #a23856 0%, #c2506e 25%, #fecddd 50%, #8c33b3 75%, #a23856 100%);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
